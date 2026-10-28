@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartBiz — Smart Buying Assistant</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><div class="logo">↗</div><div><h1>SmartBiz</h1><p id="tagline">Smart buying decisions for local shops</p></div></div>
+  <div class="top-actions">
+    <select id="language" class="lang" aria-label="Choose language"><option value="en">English</option><option value="hi">हिन्दी</option><option value="mr">मराठी</option></select>
+    <button class="secondary" id="exportBtn">↓ Export CSV</button>
+  </div>
+</header>
+<nav id="mainNav" class="nav" aria-label="Main navigation"><button type="button" data-view="dashboard" data-i18n="nDash">Dashboard</button><button type="button" data-view="inventory" data-i18n="nInv">Inventory</button><button type="button" data-view="receive" data-i18n="nRecv">Receive Stock</button><button type="button" data-view="recs" data-i18n="nRecs">Buying Recommendations</button><button type="button" data-view="reports" data-i18n="nRep">Reports</button></nav>
+<section class="hero">
+  <div><h2 id="heroTitle">Buy smarter. Waste less.</h2><p id="heroText">Know what to restock first, how much to buy, and whether your budget is enough — all in one simple place.</p></div>
+  <div class="hero-icon" aria-hidden="true">🛍️</div>
+</section>
+<section class="stats" aria-label="Business summary">
+  <div class="stat"><div class="label" id="s1label">Products tracked</div><div class="value" id="statProducts">0</div><div class="hint" id="s1hint">Items in your shop</div></div>
+  <div class="stat"><div class="label" id="s2label">Low stock</div><div class="value" id="statLow">0</div><div class="hint" id="s2hint">Less than 7 days left</div></div>
+  <div class="stat"><div class="label" id="s3label">Buying budget</div><div class="value" id="statBudget">₹0</div><div class="hint" id="s3hint">Your available amount</div></div>
+  <div class="stat"><div class="label" id="s4label">Recommended spend</div><div class="value" id="statSpend">₹0</div><div class="hint" id="s4hint">Within your budget</div></div>
+  <div class="stat"><div class="label" data-i18n="s5label">Near expiry</div><div class="value" id="statExpiry">0</div><div class="hint" data-i18n="s5hint">Within 30 days or expired</div></div>
+</section>
+<section class="panel" id="lowPanel"><div class="panel-head"><div><h3 data-i18n="lowTitle">Low-stock alerts</h3></div></div><div id="lowList"></div></section>
+<section class="panel" id="reportPanel"><div class="panel-head"><div><h3 data-i18n="repTitle">Reports</h3></div><button type="button" class="primary" id="reportExport" data-i18n="rExportT">↓ Export CSV</button></div><div id="reportBody"></div></section>
+<div class="layout">
+ <main>
+  <section class="panel">
+   <div class="panel-head"><div><h3 id="addTitle">＋ Add a product</h3><div class="sub" id="addSub">Enter stock and sales details to get a buying suggestion.</div></div></div>
+   <form id="productForm">
+    <div class="form-grid">
+     <div class="field full"><label for="pName" id="lName">Product name *</label><input id="pName" required maxlength="60" placeholder="e.g. Rice, Cooking oil"></div>
+     <div class="field"><label for="pStock" id="lStock">Current stock (units) *</label><input id="pStock" type="number" required min="0" step="any" placeholder="8"></div>
+     <div class="field"><label for="pSales" id="lSales">Average sold per day *</label><input id="pSales" type="number" required min="0" step="any" placeholder="5"></div>
+     <div class="field"><label for="pBuy" id="lBuy">Purchase price per unit (₹) *</label><input id="pBuy" type="number" required min="0" step="any" placeholder="60"></div>
+     <div class="field"><label for="pSell" id="lSell">Selling price per unit (₹)</label><input id="pSell" type="number" min="0" step="any" placeholder="70"></div>
+     <div class="field"><label for="pTarget" id="lTarget">Target stock (units) *</label><input id="pTarget" type="number" required min="0" step="any" placeholder="20"></div>
+     <div class="field"><label for="pExpiry" id="lExpiry">Expiry date (optional)</label><input id="pExpiry" type="date"></div>
+    </div>
+    <div class="form-actions"><button class="primary" type="submit" id="saveProduct">Add product</button><button class="secondary" type="reset" id="clearForm">Clear</button></div>
+   </form>
+  </section>
+  <section class="panel">
+   <div class="panel-head"><div><h3 id="inventoryTitle">Your inventory</h3><div class="sub" id="inventorySub">Stock health is based on average daily sales.</div></div><span class="tag ok" id="saveBadge">Saved on this device</span></div>
+   <div class="invtools"><input id="invSearch" type="search" aria-label="Search products" placeholder="Search products…"><select id="invSort" aria-label="Sort products"><option value="added" data-i18n="sAdded">Sort: order added</option><option value="name" data-i18n="sName">Sort: name A–Z</option><option value="days" data-i18n="sDays">Sort: days of stock (lowest)</option><option value="stock" data-i18n="sStock">Sort: stock (lowest)</option><option value="expiry" data-i18n="sExp">Sort: expiry (soonest)</option></select><select id="invFilter" aria-label="Filter products"><option value="all" data-i18n="fAll">All products</option><option value="low" data-i18n="fLow">Low stock</option><option value="exp" data-i18n="fExp">Near expiry</option><option value="ok" data-i18n="fOk">Healthy</option></select></div>
+   <div id="inventoryTable"></div><div class="sub" id="invCount" aria-live="polite"></div>
+  </section>
+  <section class="panel" id="receiveStockPanel">
+   <div class="panel-head"><div><h3>🧾 Receive stock from supplier bill</h3><div class="sub">Take a photo of the bill or upload an image. SmartBiz reads the text so you don't have to type every product.</div></div></div>
+   <p class="budget-note" style="margin-top:0">Upload a clear JPG/PNG photo. OCR needs an internet connection the first time. Bills have different layouts, so always check the extracted product, quantity and unit price before updating stock.</p>
+   <p class="bill-msg info" style="display:block;margin:0 0 10px" data-i18n="stepsT">Step 1: load a bill (photo or demo). Step 2: check and edit every row. Step 3: confirm. Stock changes only at step 3.</p>
+   <div class="form-actions"><button class="primary" type="button" id="demoBillBtn">🧪 Try Demo Bill</button><button class="secondary" type="button" id="resetBillHistory">Reset import history</button><button class="primary" type="button" id="scanBillBtn">📷 Take photo / Upload bill</button><input type="file" id="billImage" accept="image/*" capture="environment" hidden></div>
+   <div class="sub" id="ocrStatus" aria-live="polite" style="margin-top:10px">No bill scanned yet.</div>
+   <div id="billMsg" class="bill-msg" role="alert" aria-live="polite" style="display:none"></div>
+   <div id="billReview" style="display:none;margin-top:14px">
+    <div id="ocrBox" style="display:none"><label for="ocrText" style="font-size:12px;font-weight:750;display:block;margin-bottom:6px">Recognised bill text (you can correct it)</label>
+    <textarea id="ocrText" rows="5" style="width:100%;border:1px solid #dce2ed;border-radius:9px;padding:10px;font:inherit;font-size:13px" placeholder="Text read from the supplier bill will appear here"></textarea></div>
+    <div class="sub" style="margin:10px 0">Review each detected row. Enter the received quantity and purchase price per unit. Existing products will have the received quantity added to current stock.</div>
+    <div id="billRows"></div>
+    <label style="display:flex;gap:8px;align-items:center;margin:10px 0;font-size:14px"><input type="checkbox" id="deductBudget" checked> <span data-i18n="deductT">Deduct this bill total from my buying budget</span></label>
+    <div class="form-actions"><button class="secondary" type="button" id="parseBillBtn">↻ Re-detect product lines</button><button class="primary" type="button" id="applyBillBtn">✓ Confirm and update stock</button></div>
+   </div>
+  </section>
+  <section class="panel">
+   <div class="panel-head"><div><h3>📥 Bulk import products</h3><div class="sub">Add many products together using a CSV file exported from Excel or Google Sheets.</div></div></div>
+   <p class="budget-note" style="margin-top:0">Use the template, fill one product per row, then upload the CSV. Required columns: Product Name, Current Stock, Average Sold Per Day, Purchase Price, Target Stock. Selling Price and Expiry Date are optional. Existing products with the same name will be updated.</p>
+   <div class="form-actions" style="margin-top:12px"><button class="secondary" type="button" id="templateBtn">↓ Download CSV template</button><button class="primary" type="button" id="chooseCsvBtn">Choose CSV file</button><input type="file" id="csvFile" accept=".csv,text/csv" hidden></div>
+   <div class="sub" id="importStatus" aria-live="polite" style="margin-top:10px">Tip: In Excel, save your sheet as CSV UTF-8 (Comma delimited).</div>
+  </section>
+ </main>
+ <aside>
+  <section class="panel">
+   <div class="panel-head"><div><h3 id="budgetTitle">₹ Buying budget</h3><div class="sub" id="budgetSub">Set how much you can spend on restocking.</div></div></div>
+   <div class="budget-row"><div class="field"><label for="budgetInput" id="lBudget">Available budget (₹)</label><input type="number" id="budgetInput" min="0" step="any" placeholder="3000"></div><button class="primary" id="saveBudget">Save budget</button></div>
+   <div class="budget-note" id="budgetNote">Recommendations prioritise products with fewer days of stock remaining. The suggested quantity is capped by your target stock and budget.</div>
+  </section>
+  <section class="panel">
+   <div class="panel-head"><div><h3 id="recTitle">✨ Smart buying plan</h3><div class="sub" id="recSub">A suggested order for your next purchase.</div></div></div>
+   <div id="recommendations"></div>
+  </section>
+  <section class="panel">
+   <div class="panel-head"><div><h3 id="expiryTitle">⏳ Expiry watch</h3><div class="sub" id="expirySub">Products expiring within 30 days.</div></div></div>
+   <div id="expiryList"></div>
+  </section>
+ </aside>
+</div>
+<div class="foot" id="footText">SmartBiz • Demo-ready prototype • Data stays in this browser on this device</div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal-bg" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editHeading"><div class="modal"><h3 id="editHeading">Edit product</h3><form id="editForm"><input type="hidden" id="editId"><div class="form-grid">
+<div class="field full"><label for="eName">Product name *</label><input id="eName" required maxlength="60"></div>
+<div class="field"><label for="eStock">Current stock</label><input id="eStock" type="number" min="0" step="any" required></div>
+<div class="field"><label for="eSales">Sold per day</label><input id="eSales" type="number" min="0" step="any" required></div>
+<div class="field"><label for="eBuy">Purchase price ₹</label><input id="eBuy" type="number" min="0" step="any" required></div>
+<div class="field"><label for="eSell">Selling price ₹</label><input id="eSell" type="number" min="0" step="any"></div>
+<div class="field"><label for="eTarget">Target stock</label><input id="eTarget" type="number" min="0" step="any" required></div>
+<div class="field"><label for="eExpiry">Expiry date</label><input id="eExpiry" type="date"></div>
+</div><div class="form-actions"><button class="primary" type="submit" id="updateProduct">Save changes</button><button class="secondary" type="button" id="cancelEdit">Cancel</button></div></form></div></div>
+<script src="script.js"></script>
+</body>
+</html>
